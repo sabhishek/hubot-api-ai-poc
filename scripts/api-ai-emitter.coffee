@@ -45,9 +45,7 @@ module.exports = (robot) ->
   #      (TITLE contains bot name?)
   #      AND this is a user talking (not the bot to itself)
   robot.hear ///(.*)///i, (msg) ->
-    if msg.message.metadata.internal_comments > 2
-      console.log("2+ internal comments")
-    console.log("****CATCHALL msg: " + util.inspect(msg))
+    #console.log("****CATCHALL msg: " + util.inspect(msg))
     query = msg.match[1]
     console.log "hear query: #{query} thread #{getSession(msg)}"
     askAI(query, msg, getSession(msg))
@@ -74,12 +72,13 @@ module.exports = (robot) ->
                response.result.metadata.intentId? &&
                response.result.action isnt "input.unknown")
         # API.AI has determined the intent
+        
         console.log "Understood! Action complete: " + 
                     response.result.metadata.intentName + ", " + 
-                    response.result.parameters
+                    util.inspect(response.result.parameters)
         msg.send("Executing " + 
                  response.result.metadata.intentName + ", " + 
-                 response.result.parameters + "...")
+                 util.inspect(response.result.parameters))
       else
         # Default or small talk
         if (response.result.fulfillment.speech?)
