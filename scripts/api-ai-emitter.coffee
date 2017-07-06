@@ -32,30 +32,10 @@ module.exports = (robot) ->
     console.log "respond query: #{query} thread #{getSession(msg)}"
     askAI(query, msg, getSession(msg))
 
-  #robot.hear ///#{robot.name}(,\s+|\s+)(.*)///i, (msg) ->
-  #  query = msg.match[1]
-  #  console.log "hear query: #{query} thread #{getSession(msg)}"
-  #  askAI(query, msg, getSession(msg))
-
-  # WHAT WORKS:
-  #  - Can start a conversation, and within that conversation, bot continues the discussion
-  #    without using @bot
-  #  - TO FIX: 
-  #    - Prevent the bot from answering when outside of a thread directed to the bot
-  #      (TITLE contains bot name?)
-  #      AND this is a user talking (not the bot to itself)
-  robot.hear ///(.*)///i, (msg) ->
-    #console.log("****CATCHALL msg: " + util.inspect(msg))
-    query = msg.match[1]
-    console.log "hear query: #{query} thread #{getSession(msg)}"
-    askAI(query, msg, getSession(msg))
-
   getSession = (msg) ->
     # Get an existing or create new session for a user
     return msg.message.metadata.thread_id
     
-    
-
   askAI = (query, msg, session) ->
     unless process.env.API_AI_CLIENT_ACCESS_TOKEN?
       msg.send "I need a token to be smart :grin:"
@@ -72,13 +52,14 @@ module.exports = (robot) ->
                response.result.metadata.intentId? &&
                response.result.action isnt "input.unknown")
         # API.AI has determined the intent
+
+        # Answer with fulfillment speech
+        msg.send(response.result.fulfillment.speech)
         
-        console.log "Understood! Action complete: " + 
+        console.log "Emitting robot action: " + 
                     response.result.metadata.intentName + ", " + 
                     util.inspect(response.result.parameters)
-        msg.send("Executing " + 
-                 response.result.metadata.intentName + ", " + 
-                 util.inspect(response.result.parameters))
+        robot.emit response.result.metadata.intentName, msg, response.result.parameters
       else
         # Default or small talk
         if (response.result.fulfillment.speech?)
